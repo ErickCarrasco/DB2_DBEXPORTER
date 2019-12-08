@@ -95,6 +95,48 @@ void ReplicateMenu::removeTable(){
 }
 
 void ReplicateMenu::replicateDataBase(){
+    QSqlQuery qOrigin(*dbOrigin);
+    QSqlQuery qDestiny(*dbDestiny);
+    //Tomar ambas bases de datos para realizar la replica
+
+    for (int var = 0; var < tables.size(); ++var) {
+        qOrigin.prepare("SELECT * FROM" +tables.at(var));
+
+        if(!qOrigin.exec()){
+            qDebug()<<"Task failed, could not replicate table";
+            //Error in replicating tables
+        }else{
+            QSqlRecord record=qOrigin.record();
+            QString values="";
+            while(qOrigin.next()){
+                values="";
+                //Must clear to avoid overwriting the data
+                for (int innervar = 0; innervar < record.count(); ++innervar) {//GETS ALL THE DATA FROM A RECORD
+                    if(innervar==record.count()-1){
+                        values+="'"+qOrigin.value(innervar).toString()+"' ";//If it is the last value
+                    }else{
+                        values+="'"+qOrigin.value(innervar).toString()+"', ";//Not last value
+                    }
+
+                }//END FOR
+
+                //Preparing for replicate
+                qDestiny.prepare("INSERT INTO "+tables.at(var)+"VALUES ("+values+")");
+                if(qDestiny.exec()){
+                    qDebug()<<"Success";
+                }else if(!qDestiny.exec()){
+                    qDebug()<<"Failed to replicate";
+                }
+            }//END WHILE
+            resetChanges();
+            QMessageBox msgBox;
+            msgBox.setText("Replica completada");
+            msgBox.exec();
+        }
+
+
+
+    }//END MAIN FOR
 
 }
 
